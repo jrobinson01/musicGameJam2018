@@ -10,7 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "phaser": "^3.11.0"
+    "phaser": "^3.11.0",
+    "tone": "^0.12.80"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
