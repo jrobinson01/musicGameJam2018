@@ -16,4 +16,4 @@ synth.set({
     }
 });
 
-synth.triggerAttackRelease('c3', '4n');
+// synth.triggerAttackRelease('c3', '4n');
