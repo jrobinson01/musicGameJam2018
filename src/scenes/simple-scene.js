@@ -1,4 +1,4 @@
-import "../music-engine.js";
+import { MusicEngine } from "../music-engine.js";
 import { Player } from "./player.js";
 
 export class SimpleScene extends Phaser.Scene {
@@ -10,11 +10,14 @@ export class SimpleScene extends Phaser.Scene {
     this.load.image("marker", "assets/art/musicgame_4.png");
   }
   create() {
+    this.musicEngine = new MusicEngine({});
+    this.musicEngine.generateRandomSequence();
+    this.musicEngine.togglePlay();
     this.drawBoard({});
     this.markerGroup = new Phaser.GameObjects.Group(this);
     this.markers = {};
-    this.add.image(32, 32, "marker").setOrigin(0, 0);
     this.player = new Player({
+      boardSize: { x: 8, y: 8 },
       x: 0,
       y: 7,
       sprite: this.add
@@ -41,20 +44,41 @@ export class SimpleScene extends Phaser.Scene {
       this.player.move({ x: -1 });
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.x)) {
-      this.addMarker({ x: this.player.x, y: this.player.y });
+      this.toggleMarker({ x: this.player.x, y: this.player.y });
     }
+    this.rows.forEach(row => {
+      Phaser.Actions.SetAlpha(row.getChildren(), 1);
+    });
+    Phaser.Actions.SetAlpha(
+      this.rows[this.musicEngine.getPosition()].getChildren(),
+      0.7
+    );
   }
 
-  addMarker({ x = 0, y = 0 }) {
-    this.markers[`${x},${y}`] = this.add
-      .image(x * 16 + 16, y * 16 + 16, "marker")
-      .setOrigin(0, 0)
-      .setDepth(1);
-    console.log(this.markers);
+  toggleMarker({ x = 0, y = 0 }) {
+    if (this.markers[`${x},${y}`]) {
+      this.children.remove(this.markers[`${x},${y}`]);
+      delete this.markers[`${x},${y}`];
+    } else {
+      this.markers[`${x},${y}`] = this.add
+        .image(x * 16 + 16, y * 16 + 16, "marker")
+        .setOrigin(0, 0)
+        .setDepth(1);
+    }
+    this.musicEngine.clearUserPattern();
+    Object.keys(this.markers).forEach(key => {
+      const xy = key.split(",");
+      this.musicEngine.addUserNote(xy[0], Math.abs(xy[1] - 7));
+    });
+    console.log(this.musicEngine.checkForWin());
   }
 
   drawBoard({ xSize = 8, ySize = 8 }) {
+    this.rows = [];
     for (let x = 0; x < xSize + 2; x++) {
+      if (x > 0) {
+        this.rows[x - 1] = new Phaser.GameObjects.Group(this);
+      }
       for (let y = 0; y < ySize + 2; y++) {
         if (x == 0 && y > 0 && y < ySize + 1) {
           this.add.image(x * 16, y * 16, "tile_edge").setOrigin(0, 0);
@@ -94,7 +118,7 @@ export class SimpleScene extends Phaser.Scene {
             .setOrigin(0, 0)
             .setAngle(90);
         } else {
-          this.add.image(x * 16, y * 16, "tile").setOrigin(0, 0);
+          this.rows[x - 1].get(x * 16, y * 16, "tile").setOrigin(0, 0);
         }
       }
     }
