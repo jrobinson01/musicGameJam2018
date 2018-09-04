@@ -82,6 +82,7 @@ export class MusicEngine {
         if (this.userPattern[col]) {
           this.userPattern[col].forEach(userNote => {
             if (!this.pattern[col] || !this.pattern[col].includes(userNote)) {
+              document.dispatchEvent(new CustomEvent("patternError"));
               errorSynth.triggerAttackRelease(
                 Tone.Frequency.mtof(48 + this.extendedScale[userNote]),
                 "16n"
@@ -135,6 +136,21 @@ export class MusicEngine {
   }
   getPosition() {
     return Math.floor(this.sequence.progress * 8);
+  }
+  getCorrectMarkers(position) {
+    if (this.pattern[position]) {
+      return this.pattern[position].reduce((arr, curr) => {
+        if (
+          this.userPattern[position] &&
+          this.userPattern[position].includes(curr)
+        ) {
+          return [...arr, curr];
+        } else {
+          return arr;
+        }
+      }, []);
+    }
+    return false;
   }
   checkForWin() {
     if (JSON.stringify(this.pattern) === JSON.stringify(this.userPattern)) {

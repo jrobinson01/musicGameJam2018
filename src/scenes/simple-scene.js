@@ -2,6 +2,12 @@ import { MusicEngine } from "../music-engine.js";
 import { Player } from "./player.js";
 
 export class SimpleScene extends Phaser.Scene {
+  constructor() {
+    super();
+    document.addEventListener("patternError", () => {
+      this.cameras.main.shake(150, 0.03);
+    });
+  }
   preload() {
     this.load.image("dude", "assets/art/musicgame_3.png");
     this.load.image("tile", "assets/art/musicgame_0.png");
@@ -59,6 +65,13 @@ export class SimpleScene extends Phaser.Scene {
       this.rows[this.musicEngine.getPosition()].getChildren(),
       0.7
     );
+    const x = this.musicEngine.getPosition();
+    const correctMarkers = this.musicEngine.getCorrectMarkers(x);
+    if (correctMarkers && correctMarkers.length) {
+      correctMarkers.forEach(y => {
+        this.markers[`${x},${Math.abs(y - 7)}`].setTint(0xffff44);
+      });
+    }
   }
 
   toggleMarker({ x = 0, y = 0 }) {
