@@ -162,7 +162,6 @@ export class MusicEngine {
     this.pattern = [];
   }
   clearUserPattern() {
-    console.log("clearing user pattern");
     this.userPattern = [];
   }
 }

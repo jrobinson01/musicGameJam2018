@@ -7,6 +7,11 @@ export class Player {
     this.sprite.setPosition(this.x * 16 + 16, this.y * 16 + 16);
   }
   move({ x = 0, y = 0 }) {
+    if (this.x == this.boardSize.x - 1 && x > 0) {
+      document.dispatchEvent(
+        new CustomEvent("tryTheDoor", { detail: { y: this.y + 1 } })
+      );
+    }
     this.x = Math.max(Math.min(this.x + x, this.boardSize.x - 1), 0);
     this.y = Math.max(Math.min(this.y + y, this.boardSize.y - 1), 0);
     this.sprite.setPosition(this.x * 16 + 16, this.y * 16 + 16);
