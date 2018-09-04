@@ -3,15 +3,21 @@ import { Player } from "./player.js";
 
 export class SimpleScene extends Phaser.Scene {
   constructor() {
-    super();
+    super("simple-scene");
     document.addEventListener("patternError", () => {
       this.cameras.main.shake(150, 0.03);
     });
     document.addEventListener("tryTheDoor", e => {
       console.log(e.detail.y, this.door.getData("y"));
       if (e.detail.y === this.door.getData("y") && this.unlocked) {
-        console.log("NEXT LEVEL PLEASE");
-        this.scene.restart();
+        const tween = this.tweens.add({
+          targets: this.graphics,
+          alpha: 1,
+          duration: 1000,
+          onComplete: () => {
+            this.scene.restart();
+          }
+        });
       }
     });
     this.musicEngine = new MusicEngine({});
@@ -22,7 +28,7 @@ export class SimpleScene extends Phaser.Scene {
     this.musicEngine.clear();
     this.musicEngine.clearUserPattern();
     this.musicEngine.generateRandomSequence();
-    this.musicEngine.togglePlay();
+    this.musicEngine.play();
   }
   preload() {
     this.load.image("dude", "assets/art/musicgame_3.png");
@@ -53,6 +59,23 @@ export class SimpleScene extends Phaser.Scene {
       Phaser.Input.Keyboard.KeyCodes.SPACE
     );
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.rect = new Phaser.Geom.Rectangle(
+      0,
+      0,
+      this.sys.game.config.width,
+      this.sys.game.config.height
+    );
+    this.graphics = this.add.graphics({ fillStyle: { color: "0x000000" } });
+    this.graphics.fillRectShape(this.rect);
+    this.graphics.alpha = 1;
+    this.graphics.setDepth(100);
+    const tween = this.tweens.add({
+      targets: this.graphics,
+      alpha: 0,
+      duration: 1000,
+      onComplete: () => {}
+    });
+    // console.log(tween);
   }
   update() {
     if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
