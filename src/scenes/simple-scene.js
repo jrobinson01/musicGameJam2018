@@ -28,6 +28,9 @@ export class SimpleScene extends Phaser.Scene {
     // keys
     this.keys = {};
     this.keys.x = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+    this.keys.space = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.SPACE
+    );
     this.cursors = this.input.keyboard.createCursorKeys();
   }
   update() {
@@ -45,6 +48,9 @@ export class SimpleScene extends Phaser.Scene {
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.x)) {
       this.toggleMarker({ x: this.player.x, y: this.player.y });
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.keys.space)) {
+      this.musicEngine.togglePlay();
     }
     this.rows.forEach(row => {
       Phaser.Actions.SetAlpha(row.getChildren(), 1);
@@ -70,7 +76,9 @@ export class SimpleScene extends Phaser.Scene {
       const xy = key.split(",");
       this.musicEngine.addUserNote(xy[0], Math.abs(xy[1] - 7));
     });
-    console.log(this.musicEngine.checkForWin());
+    if (this.musicEngine.checkForWin()) {
+      alert("you win.. refresh to try again");
+    }
   }
 
   drawBoard({ xSize = 8, ySize = 8 }) {

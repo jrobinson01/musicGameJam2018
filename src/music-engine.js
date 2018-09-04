@@ -7,6 +7,22 @@ var verb = new Reverb({ decay: 4, wet: 0.6 }).toMaster();
 verb.generate();
 var delay = new Tone.PingPongDelay("6n", 0.2).connect(verb);
 delay.set({ wet: 0.5 });
+var dist = new Tone.BitCrusher(1).toMaster();
+dist.set({ wet: 1 });
+
+var errorSynth = new Tone.DuoSynth({
+  modulation: { type: "square" },
+  modulationEnvelope: { attack: 0.001 },
+  harmonicity: 2,
+  detune: 3,
+  voice0: {
+    oscillator: { type: "sawtooth" },
+    envelope: { release: 0.001 }
+  },
+  voice1: {
+    envelope: { release: 0.01 }
+  }
+}).connect(dist);
 
 var backgroundSynth = new PolySynth({}).connect(verb);
 backgroundSynth.set({
@@ -54,10 +70,21 @@ export class MusicEngine {
                 Tone.Frequency.mtof(60 + this.extendedScale[note]),
                 "8n"
               );
-            } else {
-              backgroundSynth.triggerAttackRelease(
-                Tone.Frequency.mtof(60 + this.extendedScale[note]),
-                "8n"
+            }
+            // else {
+            backgroundSynth.triggerAttackRelease(
+              Tone.Frequency.mtof(60 + this.extendedScale[note]),
+              "8n"
+            );
+            // }
+          });
+        }
+        if (this.userPattern[col]) {
+          this.userPattern[col].forEach(userNote => {
+            if (!this.pattern[col] || !this.pattern[col].includes(userNote)) {
+              errorSynth.triggerAttackRelease(
+                Tone.Frequency.mtof(48 + this.extendedScale[userNote]),
+                "16n"
               );
             }
           });
@@ -66,7 +93,6 @@ export class MusicEngine {
       [0, 1, 2, 3, 4, 5, 6, 7],
       "4n"
     );
-    // this.sequence.removeAll();
   }
 
   togglePlay() {
@@ -80,15 +106,16 @@ export class MusicEngine {
     for (let i = 0; i < 8; i++) {
       if (i % 2 == 1) {
         if (Math.random() > 0.6) {
-          this.addNote(i, Math.floor(Math.random() * 8));
+          const note = Math.floor(Math.random() * 8);
+          this.addNote(i, note);
         }
       } else {
         if (Math.random() > 0.2) {
-          this.addNote(i, Math.floor(Math.random() * 8));
+          const note = Math.floor(Math.random() * 5);
+          this.addNote(i, note);
+          if (Math.random() > 0.4) {
+          }
         }
-      }
-      if (Math.random() > 0.4) {
-        this.addNote(i, Math.floor(Math.random() * 8));
       }
     }
   }
@@ -119,6 +146,7 @@ export class MusicEngine {
     this.pattern = [];
   }
   clearUserPattern() {
+    console.log("clearing user pattern");
     this.userPattern = [];
   }
 }
