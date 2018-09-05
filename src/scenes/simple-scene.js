@@ -28,7 +28,7 @@ export class SimpleScene extends Phaser.Scene {
     this.musicEngine.clear();
     this.musicEngine.clearUserPattern();
     this.musicEngine.generateRandomSequence();
-    this.musicEngine.play();
+    // this.musicEngine.play();
   }
   preload() {
     this.load.image("dude", "assets/art/musicgame_3.png");
@@ -38,11 +38,12 @@ export class SimpleScene extends Phaser.Scene {
     this.load.image("marker", "assets/art/musicgame_4.png");
     this.load.image("lockedDoor", "assets/art/musicgame_6.png");
     this.load.image("unlockedDoor", "assets/art/musicgame_7.png");
+    this.load.image("uncoveredMarker", "assets/art/musicgame_8.png");
   }
   create() {
     this.drawBoard({});
-    this.markerGroup = new Phaser.GameObjects.Group(this);
     this.markers = {};
+    this.uncoveredMarkers = {};
     this.player = new Player({
       boardSize: { x: 8, y: 8 },
       x: 0,
@@ -52,13 +53,17 @@ export class SimpleScene extends Phaser.Scene {
         .setOrigin(0, 0)
         .setDepth(10)
     });
+
     // keys
     this.keys = {};
     this.keys.x = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+    this.keys.q = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
     this.keys.space = this.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.SPACE
     );
     this.cursors = this.input.keyboard.createCursorKeys();
+
+    //this rectangle is used for fading the screen in/out
     this.rect = new Phaser.Geom.Rectangle(
       0,
       0,
@@ -75,7 +80,6 @@ export class SimpleScene extends Phaser.Scene {
       duration: 1000,
       onComplete: () => {}
     });
-    // console.log(tween);
   }
   update() {
     if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
@@ -93,6 +97,65 @@ export class SimpleScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.keys.x)) {
       this.toggleMarker({ x: this.player.x, y: this.player.y });
     }
+    if (Phaser.Input.Keyboard.JustDown(this.keys.q)) {
+      console.log("casting reveal spell");
+      if (
+        !this.player.spells.search ||
+        (this.player.spells.search && this.player.spells.search.status != 0)
+      ) {
+        return;
+      }
+      this.player.spells.search.status = this.player.spells.search.cooldown;
+      const x = this.player.x;
+      const y = Math.abs(this.player.y - 7);
+      const pattern = this.musicEngine.getPattern();
+      const foundMarkers = [];
+      for (let flashX = x - 1; flashX < x + 2; flashX++) {
+        for (
+          let flashY = this.player.y - 1;
+          flashY < this.player.y + 2;
+          flashY++
+        ) {
+          if (this.rows[flashX] && this.rows[flashX].children.entries[flashY]) {
+            this.rows[flashX].children.entries[flashY].setTintFill(0xcccccc);
+            this.player.sprite.setTintFill(0x000000);
+          }
+        }
+      }
+      setTimeout(() => {
+        for (let flashX = x - 1; flashX < x + 2; flashX++) {
+          for (
+            let flashY = this.player.y - 1;
+            flashY < this.player.y + 2;
+            flashY++
+          ) {
+            if (
+              this.rows[flashX] &&
+              this.rows[flashX].children.entries[flashY]
+            ) {
+              this.rows[flashX].children.entries[flashY].setTint(0xffffff);
+              this.player.sprite.setTint(0xffffff);
+            }
+          }
+        }
+      }, 50);
+      pattern.forEach((arr, i) => {
+        if (i <= x + 1 && i >= x - 1) {
+          arr.forEach(noteVal => {
+            if (noteVal <= y + 1 && noteVal >= y - 1) {
+              foundMarkers.push([i, noteVal]);
+            }
+          });
+        }
+      });
+      foundMarkers.forEach(marker => {
+        const x = marker[0];
+        const y = Math.abs(marker[1] - 7);
+        this.uncoveredMarkers[`${x},${y}`] = this.add
+          .image(x * 16 + 16, y * 16 + 16, "uncoveredMarker")
+          .setOrigin(0, 0);
+      });
+    }
     if (Phaser.Input.Keyboard.JustDown(this.keys.space)) {
       this.musicEngine.togglePlay();
     }
@@ -107,7 +170,7 @@ export class SimpleScene extends Phaser.Scene {
     const correctMarkers = this.musicEngine.getCorrectMarkers(x);
     if (correctMarkers && correctMarkers.length) {
       correctMarkers.forEach(y => {
-        this.markers[`${x},${Math.abs(y - 7)}`].setTint(0xffff44);
+        this.markers[`${x},${Math.abs(y - 7)}`].setTintFill(0x68d8ab);
       });
     }
     if (this.unplayedNotes[x]) {
@@ -145,7 +208,6 @@ export class SimpleScene extends Phaser.Scene {
 
   drawBoard({ xSize = 8, ySize = 8 }) {
     const doorY = Math.floor(Math.random() * ySize) + 1;
-    console.log(doorY);
     this.rows = [];
     for (let x = 0; x < xSize + 2; x++) {
       if (x > 0) {

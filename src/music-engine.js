@@ -14,22 +14,22 @@ dist.set({ wet: 1 });
 
 var player = new Tone.Player("assets/sounds/musicgametrack1.mp3", function() {
   //sampler will repitch the closest sample
-  console.log(sampler);
-  player.start();
+  // console.log(sampler);
+  // player.start();
 }).connect(verb);
 player.set({ loop: true, volume: -16 });
 
 var sampler = new Tone.Sampler({
-  C3: "/assets/sounds/Nannou Kick1.mp3",
-  "C#3": "/assets/sounds/Nannou Kick2.mp3",
-  D3: "/assets/sounds/Nannou Kick3.mp3",
-  "D#3": "/assets/sounds/Nannou Kick4.mp3",
-  E3: "/assets/sounds/Nannou Kick5.mp3",
-  F3: "/assets/sounds/Nannou Scrape Kick.mp3",
-  "F#3": "/assets/sounds/Nannou Snare1.mp3",
-  G3: "/assets/sounds/Nannou Single Click3.mp3",
-  "G#3": "/assets/sounds/Nannou Single Click4.mp3",
-  A3: "/assets/sounds/Nannou Single Click5.mp3"
+  C3: "assets/sounds/kick1.mp3",
+  "C#3": "assets/sounds/kick2.mp3",
+  D3: "assets/sounds/kick3.mp3",
+  "D#3": "assets/sounds/kick4.mp3",
+  E3: "assets/sounds/kick5.mp3",
+  F3: "assets/sounds/kick6.mp3",
+  "F#3": "assets/sounds/snare.mp3",
+  G3: "assets/sounds/click1.mp3",
+  "G#3": "assets/sounds/click2.mp3",
+  A3: "assets/sounds/click3.mp3"
 }).connect(drumVerb);
 sampler.set({ volume: -12 });
 
@@ -50,27 +50,27 @@ var errorSynth = new Tone.DuoSynth({
 
 var backgroundSynth = new PolySynth({}).connect(verb);
 backgroundSynth.set({
-  polyphony: 8,
+  polyphony: 16,
   oscillator: { type: "triangle" },
   volume: -10,
   envelope: {
     attack: 0.005,
     decay: 1,
     sustain: 0.8,
-    release: 8.005
+    release: 1.005
   }
 });
 
 var foregroundSynth = new PolySynth({}).connect(delay);
 foregroundSynth.set({
-  polyphony: 8,
+  polyphony: 16,
   oscillator: { type: "sawtooth" },
   volume: -14,
   envelope: {
     attack: 0.005,
     decay: 1,
     sustain: 0.3,
-    release: 8.005
+    release: 1.005
   }
 });
 
@@ -218,7 +218,9 @@ export class MusicEngine {
           this.addNote(i, note);
           if (Math.random() > 0.8) {
             const interval = Math.floor(Math.random() * 2) + 1;
-            this.addNote(i, note + interval);
+            if (note + interval < 8) {
+              this.addNote(i, note + interval);
+            }
           }
         }
       } else {
@@ -227,7 +229,9 @@ export class MusicEngine {
           this.addNote(i, note);
           if (Math.random() > 0.8) {
             const interval = Math.floor(Math.random() * 2) + 1;
-            this.addNote(i, note + interval);
+            if (note + interval < 8) {
+              this.addNote(i, note + interval);
+            }
           }
         }
       }
@@ -249,6 +253,9 @@ export class MusicEngine {
   }
   getPosition() {
     return Math.floor(this.sequence.progress * 8);
+  }
+  getPattern() {
+    return this.pattern;
   }
   getCorrectMarkers(position) {
     if (this.pattern[position]) {

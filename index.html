@@ -6,11 +6,95 @@
     </head>
     <body>
         <style>
+         @font-face {
+             font-family: "pixel";
+	           src: url("../assets/Pixeled.ttf");
+         }
          body {
              margin: 0;
              background: black;
+             color: #fff1e8;
+             font-family: "pixel";
+         } 
+         .container {
+             display: flex;
+         }
+         #game {
+             height: 455px;
+             width: 500px;
+         }
+         #sidebar {
+             margin-top: 12px;
+             height: 415px;
+         }
+         #help-message {
+             color: #545456;
+             font-size: 12px;
+         }
+         p {
+             font-size: 13px;
+             margin: 0;
+         }
+         .title {
+             font-size: 18px;
+         }
+         .spells {
+             margin-top: 12px;
+         }
+         #messages {
+             text-transform: uppercase;
+             margin-left: 27px;
+             width: 430px
+         }
+         #messages p {
+             font-size: 10px;
+         }
+         .disabled {
+             color: #545456;
          }
         </style>
+        <div class="container">
+            <div id="left-bar">
+            <div id="game">
+            </div>
+            <div id="messages">
+                <p>
+                    user messages go here
+                </p>
+                <p>
+                    match the pattern to unlock the next room!
+                </p>
+            </div>
+            </div>
+            <div id="right-bar">
+                <div id="sidebar">
+                    <p class="title">
+                        DUNGEON SONG
+                    </p>
+                    <p>
+                        HEALTH: <span id="health">5/5</span>
+                    </p>
+                    <p>
+                        SCORE: <span id="score">2502502</span>
+                    </p>
+                    <p class="title spells">
+                        SPELLS
+                    </p>
+                    <p id="search">
+                        <span id="search-key">Q - </span>SEARCH NEARBY <span id="search-cooldown"></span>
+                    </p>
+                    <p>
+                        W - BLAST A BAD GUY
+                    </p>
+                    <p>
+                        E - EAT A TACO
+                    </p>
+                </div>
+                <div id="help-message">
+                    PRESS ? FOR HELP
+                </div>
+            </div>
+        </div>
         <script src="app.bundle.js"></script><head>
     </body>
 </html>
