@@ -9,13 +9,16 @@ export class Player {
       search: {
         cooldown: 10,
         status: 0
+      },
+      blast: {
+        cooldown: 10,
+        status: 0
       }
     };
   }
   move({ x = 0, y = 0 }) {
     Object.keys(this.spells).forEach(spell => {
       this.spells[spell].status = Math.max(this.spells[spell].status - 1, 0);
-      // console.log(spell, this.spells[spell].status);
       document.dispatchEvent(
         new CustomEvent("spellCooldownUpdate", {
           detail: {

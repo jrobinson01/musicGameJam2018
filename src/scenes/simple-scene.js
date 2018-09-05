@@ -1,20 +1,36 @@
 import { MusicEngine } from "../music-engine.js";
 import { Player } from "./player.js";
+import { Enemy } from "./enemy.js";
 
 export class SimpleScene extends Phaser.Scene {
   constructor() {
     super("simple-scene");
-    document.addEventListener("patternError", () => {
+    this.level = 1;
+    document.addEventListener("patternError", e => {
       this.cameras.main.shake(150, 0.03);
+      this.toggleMarker({ x: e.detail.x, y: Math.abs(e.detail.y - 7) });
+      if (Math.random() < 0.5) {
+        this.enemies.push(
+          new Enemy({
+            x: e.detail.x,
+            y: Math.abs(e.detail.y - 7),
+            scene: this,
+            sprite: this.add
+              .image(0, 0, "enemy")
+              .setOrigin(0, 0)
+              .setDepth(10)
+          })
+        );
+      }
     });
     document.addEventListener("tryTheDoor", e => {
-      console.log(e.detail.y, this.door.getData("y"));
       if (e.detail.y === this.door.getData("y") && this.unlocked) {
         const tween = this.tweens.add({
           targets: this.graphics,
           alpha: 1,
           duration: 1000,
           onComplete: () => {
+            this.level += 1;
             this.scene.restart();
           }
         });
@@ -28,6 +44,7 @@ export class SimpleScene extends Phaser.Scene {
     this.musicEngine.clear();
     this.musicEngine.clearUserPattern();
     this.musicEngine.generateRandomSequence();
+    console.log("LEVEL ", this.level);
     // this.musicEngine.play();
   }
   preload() {
@@ -39,6 +56,7 @@ export class SimpleScene extends Phaser.Scene {
     this.load.image("lockedDoor", "assets/art/musicgame_6.png");
     this.load.image("unlockedDoor", "assets/art/musicgame_7.png");
     this.load.image("uncoveredMarker", "assets/art/musicgame_8.png");
+    this.load.image("enemy", "assets/art/musicgame_5.png");
   }
   create() {
     this.drawBoard({});
@@ -54,10 +72,25 @@ export class SimpleScene extends Phaser.Scene {
         .setDepth(10)
     });
 
+    this.enemies = [];
+    for (let i = 0; i < Math.floor(this.level / 3); i++) {
+      this.enemies.push(
+        new Enemy({
+          x: Math.floor(Math.random() * 8),
+          y: Math.floor(Math.random() * 8),
+          scene: this,
+          sprite: this.add
+            .image(0, 0, "enemy")
+            .setOrigin(0, 0)
+            .setDepth(10)
+        })
+      );
+    }
     // keys
     this.keys = {};
     this.keys.x = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
     this.keys.q = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+    this.keys.w = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
     this.keys.space = this.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.SPACE
     );
@@ -84,21 +117,63 @@ export class SimpleScene extends Phaser.Scene {
   update() {
     if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
       this.player.move({ y: -1 });
+      this.enemies.forEach(enemy => {
+        enemy.move();
+      });
     }
     if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
       this.player.move({ y: 1 });
+      this.enemies.forEach(enemy => {
+        enemy.move();
+      });
     }
     if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
       this.player.move({ x: 1 });
+      this.enemies.forEach(enemy => {
+        enemy.move();
+      });
     }
     if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
       this.player.move({ x: -1 });
+      this.enemies.forEach(enemy => {
+        enemy.move();
+      });
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.x)) {
       this.toggleMarker({ x: this.player.x, y: this.player.y });
     }
+    if (Phaser.Input.Keyboard.JustDown(this.keys.w)) {
+      if (
+        !this.player.spells.blast ||
+        (this.player.spells.blast && this.player.spells.blast.status != 0)
+      ) {
+        return;
+      }
+      this.player.spells.blast.status = this.player.spells.blast.cooldown;
+      document.dispatchEvent(
+        new CustomEvent("spellCooldownUpdate", {
+          detail: {
+            spell: "blast",
+            status: this.player.spells.blast.status
+          }
+        })
+      );
+      const x = this.player.x;
+      const y = this.player.y;
+      this.flash(x, Math.abs(y - 7), 0xff0000);
+      this.enemies.forEach(enemy => {
+        if (
+          enemy.x <= x + 1 &&
+          enemy.x >= x - 1 &&
+          enemy.y <= y + 1 &&
+          enemy.y >= y - 1
+        ) {
+          this.children.remove(enemy.sprite);
+          this.enemies = this.enemies.filter(filterE => filterE != enemy);
+        }
+      });
+    }
     if (Phaser.Input.Keyboard.JustDown(this.keys.q)) {
-      console.log("casting reveal spell");
       if (
         !this.player.spells.search ||
         (this.player.spells.search && this.player.spells.search.status != 0)
@@ -106,39 +181,18 @@ export class SimpleScene extends Phaser.Scene {
         return;
       }
       this.player.spells.search.status = this.player.spells.search.cooldown;
+      document.dispatchEvent(
+        new CustomEvent("spellCooldownUpdate", {
+          detail: {
+            spell: "search",
+            status: this.player.spells.search.status
+          }
+        })
+      );
       const x = this.player.x;
       const y = Math.abs(this.player.y - 7);
       const pattern = this.musicEngine.getPattern();
       const foundMarkers = [];
-      for (let flashX = x - 1; flashX < x + 2; flashX++) {
-        for (
-          let flashY = this.player.y - 1;
-          flashY < this.player.y + 2;
-          flashY++
-        ) {
-          if (this.rows[flashX] && this.rows[flashX].children.entries[flashY]) {
-            this.rows[flashX].children.entries[flashY].setTintFill(0xcccccc);
-            this.player.sprite.setTintFill(0x000000);
-          }
-        }
-      }
-      setTimeout(() => {
-        for (let flashX = x - 1; flashX < x + 2; flashX++) {
-          for (
-            let flashY = this.player.y - 1;
-            flashY < this.player.y + 2;
-            flashY++
-          ) {
-            if (
-              this.rows[flashX] &&
-              this.rows[flashX].children.entries[flashY]
-            ) {
-              this.rows[flashX].children.entries[flashY].setTint(0xffffff);
-              this.player.sprite.setTint(0xffffff);
-            }
-          }
-        }
-      }, 50);
       pattern.forEach((arr, i) => {
         if (i <= x + 1 && i >= x - 1) {
           arr.forEach(noteVal => {
@@ -155,6 +209,7 @@ export class SimpleScene extends Phaser.Scene {
           .image(x * 16 + 16, y * 16 + 16, "uncoveredMarker")
           .setOrigin(0, 0);
       });
+      this.flash(x, y);
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.space)) {
       this.musicEngine.togglePlay();
@@ -185,7 +240,37 @@ export class SimpleScene extends Phaser.Scene {
     }
   }
 
+  flash(x, y, color = 0xcccccc) {
+    for (let flashX = x - 1; flashX < x + 2; flashX++) {
+      for (
+        let flashY = this.player.y - 1;
+        flashY < this.player.y + 2;
+        flashY++
+      ) {
+        if (this.rows[flashX] && this.rows[flashX].children.entries[flashY]) {
+          this.rows[flashX].children.entries[flashY].setTintFill(color);
+          this.player.sprite.setTintFill(0x000000);
+        }
+      }
+    }
+    setTimeout(() => {
+      for (let flashX = x - 1; flashX < x + 2; flashX++) {
+        for (
+          let flashY = this.player.y - 1;
+          flashY < this.player.y + 2;
+          flashY++
+        ) {
+          if (this.rows[flashX] && this.rows[flashX].children.entries[flashY]) {
+            this.rows[flashX].children.entries[flashY].setTint(0xffffff);
+            this.player.sprite.setTint(0xffffff);
+          }
+        }
+      }
+    }, 50);
+  }
+
   toggleMarker({ x = 0, y = 0 }) {
+    console.log(x, y);
     if (this.markers[`${x},${y}`]) {
       this.children.remove(this.markers[`${x},${y}`]);
       delete this.markers[`${x},${y}`];

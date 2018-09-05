@@ -110,7 +110,11 @@ export class MusicEngine {
         if (this.userPattern[col]) {
           this.userPattern[col].forEach(userNote => {
             if (!this.pattern[col] || !this.pattern[col].includes(userNote)) {
-              document.dispatchEvent(new CustomEvent("patternError"));
+              document.dispatchEvent(
+                new CustomEvent("patternError", {
+                  detail: { x: col, y: userNote }
+                })
+              );
               errorSynth.triggerAttackRelease(
                 Tone.Frequency.mtof(48 + this.extendedScale[userNote]),
                 "16n"
