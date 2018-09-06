@@ -1,12 +1,12 @@
-const Tone = require("Tone");
+const Tone = require('Tone');
 var PolySynth = Tone.PolySynth;
 var Reverb = Tone.Reverb;
 
 Tone.Transport.bpm.value = 140;
-var delay = new Tone.PingPongDelay("6n", 0.2).toMaster();
-delay.set({ wet: 0.5 });
+var delay = new Tone.PingPongDelay('6n', 0.2).toMaster();
+delay.set({wet: 0.5});
 var dist = new Tone.BitCrusher(1).toMaster();
-dist.set({ wet: 1 });
+dist.set({wet: 1});
 
 // var player = new Tone.Player("assets/sounds/musicgametrack1.mp3", function() {
 //   //sampler will repitch the closest sample
@@ -16,39 +16,35 @@ dist.set({ wet: 1 });
 // player.set({ loop: true, volume: -16 });
 
 var sampler = new Tone.Sampler({
-  C3: "assets/sounds/kick1.mp3",
-  "C#3": "assets/sounds/kick2.mp3",
-  D3: "assets/sounds/kick3.mp3",
-  "D#3": "assets/sounds/kick4.mp3",
-  E3: "assets/sounds/kick5.mp3",
-  F3: "assets/sounds/kick6.mp3",
-  "F#3": "assets/sounds/snare.mp3",
-  G3: "assets/sounds/click1.mp3",
-  "G#3": "assets/sounds/click2.mp3",
-  A3: "assets/sounds/click3.mp3"
+  C3: 'assets/sounds/kick4.wav',
+  'C#3': 'assets/sounds/g.wav',
+  D3: 'assets/sounds/f.wav',
+  'D#3': 'assets/sounds/snare22.wav',
+  E3: 'assets/sounds/hihat11.wav',
+  F3: 'assets/sounds/hihat12.wav',
 }).toMaster();
-sampler.set({ volume: -12 });
+sampler.set({volume: -8});
 
 var errorSynth = new Tone.DuoSynth({
-  modulation: { type: "square" },
-  modulationEnvelope: { attack: 0.001 },
+  modulation: {type: 'square'},
+  modulationEnvelope: {attack: 0.001},
   harmonicity: 2,
   detune: 3,
   volume: -8,
   voice0: {
-    oscillator: { type: "sawtooth" },
-    envelope: { release: 0.001 }
+    oscillator: {type: 'sawtooth'},
+    envelope: {release: 0.001}
   },
   voice1: {
-    envelope: { release: 0.1 }
+    envelope: {release: 0.1}
   }
 }).connect(dist);
 
 var backgroundSynth = new PolySynth({}).toMaster();
 backgroundSynth.set({
   polyphony: 16,
-  oscillator: { type: "triangle" },
-  volume: -10,
+  oscillator: {type: 'triangle'},
+  volume: -16,
   envelope: {
     attack: 0.005,
     decay: 1,
@@ -60,7 +56,7 @@ backgroundSynth.set({
 var foregroundSynth = new PolySynth({}).connect(delay);
 foregroundSynth.set({
   polyphony: 16,
-  oscillator: { type: "sawtooth" },
+  oscillator: {type: 'sawtooth'},
   volume: -14,
   envelope: {
     attack: 0.005,
@@ -71,7 +67,7 @@ foregroundSynth.set({
 });
 
 export class MusicEngine {
-  constructor({ scale = [0, 3, 5, 10] }) {
+  constructor({scale = [0, 3, 5, 10]}) {
     // this.scale = [0, 3, 5, 7, 8, 10];
 
     Tone.Transport.start();
@@ -92,13 +88,13 @@ export class MusicEngine {
             if (this.userPattern[col] && this.userPattern[col].includes(note)) {
               foregroundSynth.triggerAttackRelease(
                 Tone.Frequency.mtof(60 + this.extendedScale[note]),
-                "8n"
+                '8n'
               );
             }
             // else {
             backgroundSynth.triggerAttackRelease(
               Tone.Frequency.mtof(60 + this.extendedScale[note]),
-              "8n"
+              '8n'
             );
             // }
           });
@@ -107,13 +103,13 @@ export class MusicEngine {
           this.userPattern[col].forEach(userNote => {
             if (!this.pattern[col] || !this.pattern[col].includes(userNote)) {
               document.dispatchEvent(
-                new CustomEvent("patternError", {
-                  detail: { x: col, y: userNote }
+                new CustomEvent('patternError', {
+                  detail: {x: col, y: userNote}
                 })
               );
               errorSynth.triggerAttackRelease(
                 Tone.Frequency.mtof(48 + this.extendedScale[userNote]),
-                "16n"
+                '16n'
               );
             }
           });
@@ -121,87 +117,79 @@ export class MusicEngine {
         // drums
         if (col === 0) {
           this.playKickDrum();
-          this.playClickSound(0.4);
+          this.playClickSound();
         }
         if (col === 1) {
-          this.playClickSound(0.8);
-          this.playClickSound(0.6, "+8n");
+          this.playClickSound();
+          this.playKickDrum(0.4);
+          this.playKickDrum(0.6, '+8n');
         }
         if (col === 2) {
-          this.playClickSound(0.4);
-          this.playClickSound(0.7, "+8n");
+          this.playClickSound();
+          this.playSnareDrum();
+          this.playKickDrum(0.4, '+8n');
         }
         if (col === 3) {
-          this.playKickDrum(0.6);
+          this.playClickSound();
+          this.playClickSound(.5,"+8n");
         }
         if (col === 4) {
-          this.playSnareDrum();
+          this.playKickDrum();
+          this.playClickSound(.5,"+8n");
         }
         if (col === 5) {
-          this.playKickDrum(0.6);
-          this.playClickSound(0.4);
-          this.playClickSound(0.5, "8n");
+          this.playClickSound();
+          this.playClickSound(.5,"+8n");
         }
         if (col === 6) {
-          this.playClickSound(0.7);
-          this.playClickSound(0.5, "8n");
+          this.playClickSound();
+          this.playClickSound(.5,"+8n");
+          this.playSnareDrum();
         }
         if (col === 7) {
-          this.playKickDrum(0.6);
-          this.playClickSound(0.5, "8n");
+          this.playClickSound();
+          this.playKickDrum(0.6, '+8n');
         }
       },
       [0, 1, 2, 3, 4, 5, 6, 7],
-      "4n"
+      '4n'
     );
   }
-  playKickDrum(probability = 1) {
+  playKickDrum(probability = 1, delay) {
     if (Math.random() < probability) {
-      switch (Math.floor(Math.random() * 6)) {
+      sampler.triggerAttack('c3', delay);
+    }
+  }
+  playSnareDrum(probability = 1, delay) {
+    if (Math.random() < probability) {
+      switch (Math.floor(Math.random() * 3)) {
         case 0:
-          sampler.triggerAttack("c3");
+          sampler.triggerAttack('c#3', delay);
           break;
         case 1:
-          sampler.triggerAttack("c#3");
+          sampler.triggerAttack('d3', delay);
           break;
         case 2:
-          sampler.triggerAttack("d3");
-          break;
-        case 3:
-          sampler.triggerAttack("d#3");
-          break;
-        case 4:
-          sampler.triggerAttack("e3");
-          break;
-        case 5:
-          sampler.triggerAttack("f3");
+          sampler.triggerAttack('d#3', delay);
           break;
       }
     }
   }
-  playSnareDrum(probability = 1) {
-    if (Math.random() < probability) {
-      sampler.triggerAttack("f#3");
-    }
-  }
   playClickSound(probability = 1, delay) {
     if (Math.random() < probability) {
-      switch (Math.floor(Math.random() * 3)) {
+      switch (Math.floor(Math.random() * 2)) {
         case 0:
-          sampler.triggerAttack("g3", delay);
+          sampler.triggerAttack('e3', delay);
           break;
         case 1:
-          sampler.triggerAttack("g#3", delay);
-          break;
-        case 2:
-          sampler.triggerAttack("a3", delay);
+          sampler.triggerAttack('f3', delay);
           break;
       }
     }
   }
 
   togglePlay() {
-    if (this.sequence.state === "stopped") {
+    if (this.sequence.state === 'stopped') {
       this.sequence.start();
     } else {
       this.sequence.stop();
