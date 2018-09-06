@@ -3,21 +3,17 @@ var PolySynth = Tone.PolySynth;
 var Reverb = Tone.Reverb;
 
 Tone.Transport.bpm.value = 140;
-var verb = new Reverb({ decay: 4, wet: 0.6 }).toMaster();
-verb.generate();
-var drumVerb = new Reverb({ decay: 7, wet: 0.05 }).toMaster();
-drumVerb.generate();
-var delay = new Tone.PingPongDelay("6n", 0.2).connect(verb);
+var delay = new Tone.PingPongDelay("6n", 0.2).toMaster();
 delay.set({ wet: 0.5 });
 var dist = new Tone.BitCrusher(1).toMaster();
 dist.set({ wet: 1 });
 
-var player = new Tone.Player("assets/sounds/musicgametrack1.mp3", function() {
-  //sampler will repitch the closest sample
-  // console.log(sampler);
-  // player.start();
-}).connect(verb);
-player.set({ loop: true, volume: -16 });
+// var player = new Tone.Player("assets/sounds/musicgametrack1.mp3", function() {
+//   //sampler will repitch the closest sample
+//   // console.log(sampler);
+//   player.start();
+// }).toMaster();
+// player.set({ loop: true, volume: -16 });
 
 var sampler = new Tone.Sampler({
   C3: "assets/sounds/kick1.mp3",
@@ -30,7 +26,7 @@ var sampler = new Tone.Sampler({
   G3: "assets/sounds/click1.mp3",
   "G#3": "assets/sounds/click2.mp3",
   A3: "assets/sounds/click3.mp3"
-}).connect(drumVerb);
+}).toMaster();
 sampler.set({ volume: -12 });
 
 var errorSynth = new Tone.DuoSynth({
@@ -48,7 +44,7 @@ var errorSynth = new Tone.DuoSynth({
   }
 }).connect(dist);
 
-var backgroundSynth = new PolySynth({}).connect(verb);
+var backgroundSynth = new PolySynth({}).toMaster();
 backgroundSynth.set({
   polyphony: 16,
   oscillator: { type: "triangle" },
@@ -57,7 +53,7 @@ backgroundSynth.set({
     attack: 0.005,
     decay: 1,
     sustain: 0.8,
-    release: 1.005
+    release: 4.005
   }
 });
 
