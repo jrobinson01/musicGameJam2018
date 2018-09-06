@@ -28,3 +28,25 @@ document.addEventListener("spellCooldownUpdate", e => {
     }
   }
 });
+
+document.addEventListener("level", e => {
+  const el = document.getElementById("level");
+  el.textContent = e.detail.level;
+});
+
+document.addEventListener("updateMoves", e => {
+  const el = document.getElementById("moves");
+  el.textContent = e.detail.moves;
+});
+
+const messages = [];
+document.addEventListener("printMessage", e => {
+  messages.unshift(e.detail.message);
+  const messagesEl = document.getElementById("messages");
+  messagesEl.innerHTML = "";
+  for (let i = 0; i < 3; i++) {
+    const messageEl = document.createElement("p");
+    messageEl.textContent = messages[i];
+    messagesEl.appendChild(messageEl);
+  }
+});

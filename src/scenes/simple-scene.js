@@ -6,6 +6,16 @@ export class SimpleScene extends Phaser.Scene {
   constructor() {
     super("simple-scene");
     this.level = 1;
+    document.addEventListener("makeMove", e => {
+      if (e.detail && e.detail.moves) {
+        this.moves -= e.detail.moves;
+      } else {
+        this.moves -= 1;
+      }
+      document.dispatchEvent(
+        new CustomEvent("updateMoves", { detail: { moves: this.moves } })
+      );
+    });
     document.addEventListener("patternError", e => {
       this.cameras.main.shake(150, 0.03);
       this.toggleMarker({ x: e.detail.x, y: Math.abs(e.detail.y - 7) });
@@ -37,15 +47,31 @@ export class SimpleScene extends Phaser.Scene {
       }
     });
     this.musicEngine = new MusicEngine({});
+    // document.dispatchEvent(
+    //   new CustomEvent("printMessage", {
+    //     detail: { message: "press ? for help" }
+    //   })
+    // );
+    document.dispatchEvent(
+      new CustomEvent("printMessage", {
+        detail: { message: "WELCOME TO THE DUNGEON BABY" }
+      })
+    );
   }
   init() {
+    this.moves = 100;
+    document.dispatchEvent(
+      new CustomEvent("updateMoves", { detail: { moves: this.moves } })
+    );
     this.unlocked = false;
     this.unplayedNotes = {};
     this.musicEngine.clear();
     this.musicEngine.clearUserPattern();
     this.musicEngine.generateRandomSequence();
-    console.log("LEVEL ", this.level);
-    // this.musicEngine.play();
+    this.musicEngine.play();
+    document.dispatchEvent(
+      new CustomEvent("level", { detail: { level: this.level } })
+    );
   }
   preload() {
     this.load.image("dude", "assets/art/musicgame_3.png");
@@ -73,7 +99,7 @@ export class SimpleScene extends Phaser.Scene {
     });
 
     this.enemies = [];
-    for (let i = 0; i < Math.floor(this.level / 3); i++) {
+    for (let i = 0; i < Math.floor(this.level / 2); i++) {
       this.enemies.push(
         new Enemy({
           x: Math.floor(Math.random() * 8),
@@ -91,6 +117,9 @@ export class SimpleScene extends Phaser.Scene {
     this.keys.x = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
     this.keys.q = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
     this.keys.w = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+    this.keys.help = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.FORWARD_SLASH
+    );
     this.keys.space = this.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.SPACE
     );
@@ -115,6 +144,9 @@ export class SimpleScene extends Phaser.Scene {
     });
   }
   update() {
+    if (Phaser.Input.Keyboard.JustDown(this.keys.help)) {
+      alert("I told you not to do that.");
+    }
     if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
       this.player.move({ y: -1 });
       this.enemies.forEach(enemy => {
@@ -149,6 +181,9 @@ export class SimpleScene extends Phaser.Scene {
       ) {
         return;
       }
+      document.dispatchEvent(
+        new CustomEvent("makeMove", { detail: { moves: 5 } })
+      );
       this.player.spells.blast.status = this.player.spells.blast.cooldown;
       document.dispatchEvent(
         new CustomEvent("spellCooldownUpdate", {
@@ -181,6 +216,9 @@ export class SimpleScene extends Phaser.Scene {
         return;
       }
       this.player.spells.search.status = this.player.spells.search.cooldown;
+      document.dispatchEvent(
+        new CustomEvent("makeMove", { detail: { moves: 5 } })
+      );
       document.dispatchEvent(
         new CustomEvent("spellCooldownUpdate", {
           detail: {
@@ -237,6 +275,9 @@ export class SimpleScene extends Phaser.Scene {
     ) {
       this.door.setTexture("unlockedDoor");
       this.unlocked = true;
+    }
+    if (this.moves <= 0) {
+      alert("GAME OVER LOSER");
     }
   }
 

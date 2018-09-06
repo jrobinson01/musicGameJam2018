@@ -8,7 +8,7 @@
         <style>
          @font-face {
              font-family: "pixel";
-	           src: url("../assets/Pixeled.ttf");
+	           src: url("assets/Pixeled.ttf");
          }
          body {
              margin: 0;
@@ -58,12 +58,6 @@
             <div id="game">
             </div>
             <div id="messages">
-                <p>
-                    user messages go here
-                </p>
-                <p>
-                    match the pattern to unlock the next room!
-                </p>
             </div>
             </div>
             <div id="right-bar">
@@ -71,8 +65,14 @@
                     <p class="title">
                         DUNGEON SONG
                     </p>
+                    <!-- <p> -->
+                    <!-- HEALTH: <span id="health">5/5</span> -->
+                    <!-- </p> -->
                     <p>
-                        HEALTH: <span id="health">5/5</span>
+                        LEVEL: <span id="level">1</span>
+                    </p>
+                    <p>
+                        MOVES: <span id="moves">100</span>
                     </p>
                     <p>
                         SCORE: <span id="score">2502502</span>
@@ -84,11 +84,11 @@
                         <span id="search-key">Q - </span>SEARCH NEARBY <span id="search-cooldown"></span>
                     </p>
                     <p id="blast">
-                        <span id="blast-key">W - </span>BLAST A BAD GUY <span id="blast-cooldown"></span>
+                        <span id="blast-key">W - </span>BLAST A SPIDER <span id="blast-cooldown"></span>
                     </p>
                 </div>
                 <div id="help-message">
-                    PRESS ? FOR HELP
+                    DON'T PRESS ? FOR HELP
                 </div>
             </div>
         </div>

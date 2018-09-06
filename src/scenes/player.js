@@ -33,6 +33,7 @@ export class Player {
         new CustomEvent("tryTheDoor", { detail: { y: this.y + 1 } })
       );
     }
+    document.dispatchEvent(new CustomEvent("makeMove"));
     this.x = Math.max(Math.min(this.x + x, this.boardSize.x - 1), 0);
     this.y = Math.max(Math.min(this.y + y, this.boardSize.y - 1), 0);
     this.sprite.setPosition(this.x * 16 + 16, this.y * 16 + 16);
