@@ -1,17 +1,20 @@
 import {MusicEngine} from '../music-engine.js';
 import {Player} from './player.js';
 import {Enemy} from './enemy.js';
+import {Ghost} from './ghost';
 
-export class SimpleScene extends Phaser.Scene {
+export class GameScene extends Phaser.Scene {
   constructor() {
-    super('simple-scene');
+    super('game-scene');
     this.level = 1;
     this.score = 0;
     document.addEventListener('increaseScore', e => {
-      this.score += e.detail.points;
+      this.score =
+        this.score +
+        Math.max(0, Math.floor(e.detail.points * (this.level / 2)));
       document.dispatchEvent(
         new CustomEvent('updateScore', {
-          detail: {score: this.score * (this.level / 2)}
+          detail: {score: Math.floor(this.score)}
         })
       );
     });
@@ -28,11 +31,13 @@ export class SimpleScene extends Phaser.Scene {
     document.addEventListener('patternError', e => {
       this.cameras.main.shake(150, 0.03);
       this.toggleMarker({x: e.detail.x, y: Math.abs(e.detail.y - 7)});
+      this.flash(e.detail.x, e.detail.y);
+      this.searchForMarkers(e.detail.x, e.detail.y);
       if (Math.random() < 0.5) {
         this.enemies.push(
           new Enemy({
-            x: e.detail.x,
-            y: Math.abs(e.detail.y - 7),
+            x: Math.floor(Math.random() * 8),
+            y: Math.floor(Math.random() * 8),
             scene: this,
             sprite: this.add
               .image(0, 0, 'enemy')
@@ -58,12 +63,36 @@ export class SimpleScene extends Phaser.Scene {
         });
       }
     });
+    document.addEventListener('gameOver', e => {
+      this.gameOver = true;
+      this.cameras.main.shake(3000, 0.006);
+      const tween = this.tweens.add({
+        targets: this.graphics,
+        alpha: 1,
+        duration: 2500,
+        onComplete: () => {}
+      });
+      setTimeout(() => {
+        this.registry.set('score', this.score);
+        this.scene.stop('game-over-scene');
+        this.scene.start('game-over-scene', {score: this.score});
+      }, 3000);
+    });
+    document.addEventListener('spawnGhost', () => {
+      this.musicEngine.revealGhostPattern();
+      this.cameras.main.shake(300, 0.06);
+      this.ghost = new Ghost({
+        x: Math.floor(Math.random() * 8),
+        y: Math.floor(Math.random() * 8),
+        scene: this,
+        sprite: this.add
+          .image(0, 0, 'ghost')
+          .setOrigin(0, 0)
+          .setDepth(10)
+      });
+      this.enemies.push(this.ghost);
+    });
     this.musicEngine = new MusicEngine({});
-    // document.dispatchEvent(
-    //   new CustomEvent("printMessage", {
-    //     detail: { message: "press ? for help" }
-    //   })
-    // );
     document.dispatchEvent(
       new CustomEvent('printMessage', {
         detail: {message: 'WELCOME TO THE DUNGEON BABY'}
@@ -72,6 +101,9 @@ export class SimpleScene extends Phaser.Scene {
   }
   init() {
     this.moves = 100;
+    this.ghost = null;
+    this.gameOver = false;
+    this.musicEngine.silenceGhostPattern();
     document.dispatchEvent(
       new CustomEvent('updateMoves', {detail: {moves: this.moves}})
     );
@@ -79,7 +111,7 @@ export class SimpleScene extends Phaser.Scene {
     this.unplayedNotes = {};
     this.musicEngine.clear();
     this.musicEngine.clearUserPattern();
-    this.musicEngine.generateRandomSequence();
+    this.musicEngine.generateRandomSequence(this.level);
     this.musicEngine.play();
     document.dispatchEvent(
       new CustomEvent('level', {detail: {level: this.level}})
@@ -95,6 +127,7 @@ export class SimpleScene extends Phaser.Scene {
     this.load.image('unlockedDoor', 'assets/art/musicgame_7.png');
     this.load.image('uncoveredMarker', 'assets/art/musicgame_8.png');
     this.load.image('enemy', 'assets/art/musicgame_5.png');
+    this.load.image('ghost', 'assets/art/musicgame_9.png');
   }
   create() {
     this.drawBoard({});
@@ -111,7 +144,7 @@ export class SimpleScene extends Phaser.Scene {
     });
 
     this.enemies = [];
-    for (let i = 0; i < Math.floor(this.level / 2); i++) {
+    for (let i = 0; i < Math.min(Math.floor(this.level / 3), 10); i++) {
       this.enemies.push(
         new Enemy({
           x: Math.floor(Math.random() * 8),
@@ -124,11 +157,12 @@ export class SimpleScene extends Phaser.Scene {
         })
       );
     }
+
     // keys
     this.keys = {};
     this.keys.x = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
-    this.keys.q = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-    this.keys.w = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+    this.keys.q = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+    this.keys.w = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
     this.keys.help = this.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.FORWARD_SLASH
     );
@@ -155,21 +189,25 @@ export class SimpleScene extends Phaser.Scene {
       onComplete: () => {}
     });
     const patternLength = this.musicEngine
-    .getPattern()
-    .reduce((acc, val) => acc.concat(val), []).length;
-  const userPatternLength = this.musicEngine.userPattern.reduce(
-    (acc, val) => acc.concat(val),
-    []
-  ).length;
-  document.dispatchEvent(
-    new CustomEvent('updateNotes', {
-      detail: {patternLength, userPatternLength}
-    })
-  );
+      .getPattern()
+      .reduce((acc, val) => acc.concat(val), []).length;
+    const userPatternLength = this.musicEngine.userPattern.reduce(
+      (acc, val) => acc.concat(val),
+      []
+    ).length;
+    document.dispatchEvent(
+      new CustomEvent('updateNotes', {
+        detail: {patternLength, userPatternLength}
+      })
+    );
   }
   update() {
+    if (this.gameOver) {
+      return;
+    }
     if (Phaser.Input.Keyboard.JustDown(this.keys.help)) {
-      alert('I told you not to do that.');
+      // alert('I told you not to do that.');
+      this.musicEngine.revealGhostPattern();
     }
     if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
       this.player.move({y: -1});
@@ -199,26 +237,22 @@ export class SimpleScene extends Phaser.Scene {
       this.toggleMarker({x: this.player.x, y: this.player.y});
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.w)) {
-      if (
-        !this.player.spells.blast ||
-        (this.player.spells.blast && this.player.spells.blast.status != 0)
-      ) {
-        return;
-      }
-      document.dispatchEvent(new CustomEvent('makeMove', {detail: {moves: 5}}));
-      this.player.spells.blast.status = this.player.spells.blast.cooldown;
-      document.dispatchEvent(
-        new CustomEvent('spellCooldownUpdate', {
-          detail: {
-            spell: 'blast',
-            status: this.player.spells.blast.status
-          }
-        })
-      );
+      document.dispatchEvent(new CustomEvent('makeMove', {detail: {moves: 1}}));
+      // document.dispatchEvent(
+      //   new CustomEvent('spellCooldownUpdate', {
+      //     detail: {
+      //       spell: 'blast',
+      //       status: this.player.spells.blast.status
+      //     }
+      //   })
+      // );
       const x = this.player.x;
       const y = this.player.y;
       this.flash(x, Math.abs(y - 7), 0xff0000);
       this.enemies.forEach(enemy => {
+        if (enemy instanceof Ghost) {
+          return;
+        }
         if (
           enemy.x <= x + 1 &&
           enemy.x >= x - 1 &&
@@ -237,8 +271,7 @@ export class SimpleScene extends Phaser.Scene {
       ) {
         return;
       }
-      this.player.spells.search.status = this.player.spells.search.cooldown;
-      document.dispatchEvent(new CustomEvent('makeMove', {detail: {moves: 5}}));
+      document.dispatchEvent(new CustomEvent('makeMove', {detail: {moves: 1}}));
       document.dispatchEvent(
         new CustomEvent('spellCooldownUpdate', {
           detail: {
@@ -247,27 +280,8 @@ export class SimpleScene extends Phaser.Scene {
           }
         })
       );
-      const x = this.player.x;
-      const y = Math.abs(this.player.y - 7);
-      const pattern = this.musicEngine.getPattern();
-      const foundMarkers = [];
-      pattern.forEach((arr, i) => {
-        if (i <= x + 1 && i >= x - 1) {
-          arr.forEach(noteVal => {
-            if (noteVal <= y + 1 && noteVal >= y - 1) {
-              foundMarkers.push([i, noteVal]);
-            }
-          });
-        }
-      });
-      foundMarkers.forEach(marker => {
-        const x = marker[0];
-        const y = Math.abs(marker[1] - 7);
-        this.uncoveredMarkers[`${x},${y}`] = this.add
-          .image(x * 16 + 16, y * 16 + 16, 'uncoveredMarker')
-          .setOrigin(0, 0);
-      });
-      this.flash(x, y);
+      this.player.spells.search.status = this.player.spells.search.cooldown;
+      this.searchForMarkers(this.player.x, Math.abs(this.player.y - 7));
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.space)) {
       this.musicEngine.togglePlay();
@@ -291,14 +305,63 @@ export class SimpleScene extends Phaser.Scene {
     }
     if (
       !Object.keys(this.unplayedNotes).length &&
-      this.musicEngine.checkForWin()
+      this.musicEngine.checkForWin() &&
+      !this.unlocked
     ) {
       this.door.setTexture('unlockedDoor');
       this.unlocked = true;
+      this.enemies.forEach(enemy => {
+        if (enemy instanceof Ghost) {
+          return;
+        }
+        this.children.remove(enemy.sprite);
+      });
+      this.enemies = this.enemies.filter(enemy => enemy instanceof Ghost);
+      document.dispatchEvent(new CustomEvent('levelUnlock'));
     }
-    if (this.moves <= 0) {
-      alert('GAME OVER LOSER');
+    if (this.moves == 0) {
+      document.dispatchEvent(new CustomEvent('spawnGhost'));
+      this.moves -= 1;
     }
+    if (
+      this.ghost &&
+      this.ghost.x == this.player.x &&
+      this.ghost.y == this.player.y
+    ) {
+      document.dispatchEvent(new CustomEvent('gameOver'));
+    }
+  }
+
+  resetGame() {
+    this.score = 0;
+    this.level = 1;
+    document.dispatchEvent(
+      new CustomEvent('updateScore', {
+        detail: {score: Math.floor(this.score)}
+      })
+    );
+  }
+
+  searchForMarkers(x, y) {
+    const pattern = this.musicEngine.getPattern();
+    const foundMarkers = [];
+    pattern.forEach((arr, i) => {
+      if (i <= x + 1 && i >= x - 1) {
+        arr.forEach(noteVal => {
+          if (noteVal <= y + 1 && noteVal >= y - 1) {
+            foundMarkers.push([i, noteVal]);
+          }
+        });
+      }
+    });
+    foundMarkers.forEach(marker => {
+      const x = marker[0];
+      const y = Math.abs(marker[1] - 7);
+      this.uncoveredMarkers[`${x},${y}`] = this.add
+        .image(x * 16 + 16, y * 16 + 16, 'uncoveredMarker')
+        .setOrigin(0, 0);
+    });
+    this.flash(x, y);
   }
 
   flash(x, y, color = 0xcccccc) {
@@ -322,7 +385,7 @@ export class SimpleScene extends Phaser.Scene {
           flashY++
         ) {
           if (this.rows[flashX] && this.rows[flashX].children.entries[flashY]) {
-            this.rows[flashX].children.entries[flashY].setTint(0xffffff);
+            this.rows[flashX].children.entries[flashY].clearTint();
             this.player.sprite.setTint(0xffffff);
           }
         }

@@ -7,13 +7,9 @@ export class Player {
     this.sprite.setPosition(this.x * 16 + 16, this.y * 16 + 16);
     this.spells = {
       search: {
-        cooldown: 10,
+        cooldown: 24,
         status: 0
       },
-      blast: {
-        cooldown: 10,
-        status: 0
-      }
     };
   }
   move({ x = 0, y = 0 }) {

@@ -1,13 +1,15 @@
 import "phaser";
 import "./dom-controller.js";
-import { SimpleScene } from "./scenes/simple-scene";
+import { GameScene } from "./scenes/game-scene.js";
+import {StartScene} from "./scenes/start-scene.js"
+import { GameOverScene } from "./scenes/game-over-scene.js";
 
 const gameConfig = {
   width: 256,
   height: 256,
   pixelArt: true,
   zoom: 3,
-  scene: SimpleScene,
+  scene: [StartScene, GameScene, GameOverScene],
   parent: "game"
 };
 

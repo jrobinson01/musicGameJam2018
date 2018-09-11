@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8"/>
         <title>MusicGameJam2018</title>
+
     </head>
     <body>
         <style>
@@ -15,6 +16,7 @@
              background: black;
              color: #fff1e8;
              font-family: "pixel";
+             text-transform: uppercase;
          } 
          .container {
              display: flex;
@@ -52,6 +54,75 @@
          .disabled {
              color: #545456;
          }
+         #game-over {
+             display: none;
+             padding: 0 32px;
+             position: absolute;
+             top: 0;
+             width: 732px;
+             height: 600px;
+             background: black;
+         }
+         #final-score {
+             font-size: 18px;
+             color: #29adff;
+         }
+         #game-over input {
+            background: black;
+            border-top: none;
+            border-right: none;
+            border-left: none;
+            border-image: initial;
+            border-bottom: 2px solid white;
+            color: white;
+            font-family: inherit;
+         }
+         #high-score-screen {
+            display: none;
+             padding: 0 32px;
+             position: absolute;
+             top: 0;
+             width: 732px;
+             height: 600px;
+             background: black;
+             text-align: center;
+         }
+         #start-screen {
+            /* display: none; */
+             padding: 0 32px;
+             position: absolute;
+             top: 0;
+             width: 732px;
+             height: 600px;
+             background: black;
+             text-align: center;
+             padding-top: 100px;
+         }
+         .main-title {
+             font-size: 32px;
+         }
+         ol {
+             margin: 0;
+             padding: 0;
+             font-size: 13px;
+             height: 400px;
+             list-style-position: inside;
+             overflow: auto;
+         }
+         button {
+             font-family: inherit;
+             border: 1px solid white;
+             color: inherit;
+             background: black;
+             cursor: pointer;
+         }
+         .flex-container {
+             display: flex;
+             justify-content: space-between;
+         }
+         .press-esc {
+             color: #29adff;
+         }
         </style>
         <div class="container">
             <div id="left-bar">
@@ -65,9 +136,6 @@
                     <p class="title">
                         DUNGEON SONG
                     </p>
-                    <!-- <p> -->
-                    <!-- HEALTH: <span id="health">5/5</span> -->
-                    <!-- </p> -->
                     <p>
                         LEVEL: <span id="level">1</span>
                     </p>
@@ -84,10 +152,10 @@
                         SPELLS
                     </p>
                     <p id="search">
-                        <span id="search-key">Q - </span>SEARCH NEARBY <span id="search-cooldown"></span>
+                        <span id="search-key">S - </span>SEARCH NEARBY <span id="search-cooldown"></span>
                     </p>
                     <p id="blast">
-                        <span id="blast-key">W - </span>BLAST A SPIDER <span id="blast-cooldown"></span>
+                        <span id="blast-key">Z - </span>BLAST A SPIDER <span id="blast-cooldown"></span>
                     </p>
                 </div>
                 <div id="help-message">
@@ -95,6 +163,35 @@
                 </div>
             </div>
         </div>
-        <script src="app.bundle.js"></script><head>
+        <div id="game-over">
+            <div class="flex-container">
+                <p class=title>GAME OVER</p>
+                <p class="press-esc">press ESC to restart</p>
+            </div>
+            <p>YOUR FINAL SCORE IS <span id="final-score"></span></p>
+            <p>enter your name to submit your score to the leaderboard:</p>
+            <form id="high-score-form">
+                <input type="number" id="score-form-hidden" value=0 style="display:none">
+                <input type="text" name="high score" id=name autofocus>
+                <button>SUBMIT</button>
+            </form>
+            <p class="title">leaderboard:</p>
+            <ol id=short-high-score-list>
+                <p>(loading)</p>
+            </ol>
+        </div>
+        <div id="high-score-screen">
+            <p class="title">HIGH SCORES</p>
+            <ol id=high-score-list>
+                <p>(loading)</p>
+            </ol>
+                <p class="press-esc">press ESC to restart</p>
+        </div>
+        <div id="start-screen">
+            <div class="main-title">DUNGEON SONG</div>
+            <p class="press-esc">press any key to begin</p>
+        </div>
+        <script src="https://www.gstatic.com/firebasejs/5.4.2/firebase.js"></script>
+        <script src="app.bundle.js"></script>
     </body>
 </html>

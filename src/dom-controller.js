@@ -1,3 +1,5 @@
+import {saveHighScore, fetchHighScores} from './firebase-controller';
+
 document.addEventListener('spellCooldownUpdate', e => {
   if (e.detail.spell == 'search') {
     const searchEl = document.getElementById('search');
@@ -62,3 +64,69 @@ document.addEventListener('updateNotes', e => {
     e.detail.patternLength
   }`;
 });
+
+document.addEventListener('displayGameOver', e => {
+  const score = e.detail.score;
+  const gameOverEl = document.getElementById('game-over');
+  gameOverEl.style.display = 'block';
+  const scoreEl = document.getElementById('final-score');
+  const scoreFormThing = document.querySelector('#score-form-hidden');
+  scoreFormThing.value = score;
+  scoreEl.textContent = score;
+
+  const highScoreListEl = document.getElementById('short-high-score-list');
+  highScoreListEl.innerHTML = '(loading)';
+  fetchHighScores(5).then(snapshot => {
+    highScoreListEl.innerHTML = '';
+    snapshot.forEach(item => {
+      const newListItem = document.createElement('li');
+      newListItem.textContent = `${item.data().name} - ${item.data().score}`;
+      highScoreListEl.appendChild(newListItem);
+    });
+  });
+});
+
+document.addEventListener('hideGameOver', () => {
+  const gameOverEl = document.getElementById('game-over');
+  gameOverEl.style.display = 'none';
+});
+
+const highScoreForm = document.querySelector('#high-score-form');
+highScoreForm.onsubmit = function(e) {
+  e.preventDefault();
+  const name = highScoreForm.querySelector('#name').value;
+  const score = highScoreForm.querySelector('#score-form-hidden').value;
+  saveHighScore(name, score);
+  document.dispatchEvent(new CustomEvent('hideGameOver'));
+  document.dispatchEvent(new CustomEvent('showHighScoreScreen'));
+};
+
+document.addEventListener('showHighScoreScreen', () => {
+  const highScoreScreenEl = document.getElementById('high-score-screen');
+  highScoreScreenEl.style.display = 'block';
+  const highScoreListEl = document.getElementById('high-score-list');
+  highScoreListEl.innerHTML = '(loading)';
+  fetchHighScores().then(snapshot => {
+    highScoreListEl.innerHTML = '';
+    snapshot.forEach(item => {
+      const newListItem = document.createElement('li');
+      newListItem.textContent = `${item.data().name} - ${item.data().score}`;
+      highScoreListEl.appendChild(newListItem);
+    });
+  });
+});
+
+document.addEventListener('hideHighScoreScreen', () => {
+  const highScoreScreenEl = document.getElementById('high-score-screen');
+  highScoreScreenEl.style.display = 'none';
+});
+
+document.addEventListener('showStartScreen', ()=> {
+  const startScreenEl = document.getElementById('start-screen')
+  startScreenEl.style.display = 'block'
+})
+
+document.addEventListener('hideStartScreen', ()=> {
+  const startScreenEl = document.getElementById('start-screen')
+  startScreenEl.style.display = 'none'
+})

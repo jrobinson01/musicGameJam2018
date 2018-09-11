@@ -3,44 +3,66 @@ var PolySynth = Tone.PolySynth;
 var Reverb = Tone.Reverb;
 
 Tone.Transport.bpm.value = 140;
-var delay = new Tone.PingPongDelay('6n', 0.2).toMaster();
-delay.set({wet: 0.5});
-var dist = new Tone.BitCrusher(1).toMaster();
+var delay = new Tone.PingPongDelay('6n', 0.3).toMaster();
+delay.set({wet: 0.2});
+var bassdelay = new Tone.PingPongDelay('4n.', 0.1).toMaster();
+bassdelay.set({wet: 0.7});
+var dist = new Tone.BitCrusher(2).toMaster();
 dist.set({wet: 1});
+var dist2 = new Tone.BitCrusher(4).toMaster();
+dist2.set({wet: 0});
 
-// var player = new Tone.Player("assets/sounds/musicgametrack1.mp3", function() {
-//   //sampler will repitch the closest sample
-//   // console.log(sampler);
-//   player.start();
-// }).toMaster();
-// player.set({ loop: true, volume: -16 });
+var ghostAtmo = new Tone.Player('assets/sounds/Atmospheres-05.mp3').toMaster();
+ghostAtmo.set({
+  loop: true,
+  volume: -4
+});
 
 var sampler = new Tone.Sampler({
-  C3: 'assets/sounds/kick4.wav',
-  'C#3': 'assets/sounds/g.wav',
-  D3: 'assets/sounds/f.wav',
-  'D#3': 'assets/sounds/snare22.wav',
-  E3: 'assets/sounds/hihat11.wav',
-  F3: 'assets/sounds/hihat12.wav',
+  C3: 'assets/sounds/kick4.mp3',
+  'C#3': 'assets/sounds/g.mp3',
+  D3: 'assets/sounds/f.mp3',
+  'D#3': 'assets/sounds/snare22.mp3',
+  E3: 'assets/sounds/hihat11.mp3',
+  F3: 'assets/sounds/hihat12.mp3',
+  C4: 'assets/sounds/bling.mp3',
+  'C#4': 'assets/sounds/HIT.mp3'
 }).toMaster();
-sampler.set({volume: -8});
+sampler.set({volume: -18});
+
+var sfx = new Tone.Sampler({
+  C4: 'assets/sounds/bling.mp3',
+  'C#4': 'assets/sounds/HIT.mp3'
+}).toMaster();
+sfx.set({volume: -18});
+
+var bass = new Tone.Synth({
+  volume: -6,
+  envelope: {
+    attack: 0.01,
+    decay: 0.15,
+    sustain: 0.2,
+    release: 24
+  }
+}).connect(bassdelay);
 
 var errorSynth = new Tone.DuoSynth({
   modulation: {type: 'square'},
   modulationEnvelope: {attack: 0.001},
   harmonicity: 2,
   detune: 3,
-  volume: -8,
+  volume: -6,
   voice0: {
-    oscillator: {type: 'sawtooth'},
+    oscillator: {type: 'triangle'},
     envelope: {release: 0.001}
   },
   voice1: {
     envelope: {release: 0.1}
   }
 }).connect(dist);
+errorSynth.set({volume: -36});
 
-var backgroundSynth = new PolySynth({}).toMaster();
+var backgroundSynth = new PolySynth({}).connect(dist2);
 backgroundSynth.set({
   polyphony: 16,
   oscillator: {type: 'triangle'},
@@ -56,19 +78,39 @@ backgroundSynth.set({
 var foregroundSynth = new PolySynth({}).connect(delay);
 foregroundSynth.set({
   polyphony: 16,
-  oscillator: {type: 'sawtooth'},
-  volume: -14,
+  oscillator: {type: 'square'},
+  volume: -17,
   envelope: {
     attack: 0.005,
     decay: 1,
     sustain: 0.3,
-    release: 1.005
+    release: 4.005
+  }
+});
+
+var ghostSynth = new Tone.Synth({}).connect(delay);
+ghostSynth.set({
+  oscillator: {type: 'square'},
+  volume: -Infinity,
+  envelope: {
+    attack: 0.5,
+    decay: 1,
+    sustain: 0.8,
+    release: 4.005
   }
 });
 
 export class MusicEngine {
-  constructor({scale = [0, 3, 5, 10]}) {
-    // this.scale = [0, 3, 5, 7, 8, 10];
+  constructor({scale = [0, 3, 5, 7, 10, 14, 15, 19]}) {
+    document.addEventListener('levelUnlock', () => {
+      sfx.triggerAttack('c4');
+    });
+    document.addEventListener('gameOver', () => {
+      sfx.triggerAttack('c#4');
+    });
+    document.addEventListener('spawnGhost', () => {
+      sfx.triggerAttack('c#4');
+    });
 
     Tone.Transport.start();
     this.pattern = [];
@@ -80,21 +122,81 @@ export class MusicEngine {
       ...this.scale.map(x => x + 12),
       ...this.scale.map(x => x + 24)
     ];
+    this.ghostPattern = [null, null, 3, 2];
+    this.ghostSequence = new Tone.Sequence(
+      (time, col) => {
+        if (this.ghostPattern[col % 4]) {
+          ghostSynth.triggerAttackRelease(
+            Tone.Frequency.mtof(this.ghostPattern[col % 4] + 72),
+            '8n'
+          );
+        }
+      },
+      [0, 1, 2, 3, 4, 5, 6, 7],
+      '8n'
+    );
+    this.bassSequence = new Tone.Sequence(
+      (time, col) => {
+        if (col === 0) {
+          bass.triggerAttackRelease('C2', '2n');
+        }
+        if (col === 1) {
+          switch (Math.floor(Math.random() * 4)) {
+            case 0:
+              bass.triggerAttackRelease('D#2', '2n');
+              break;
+            case 1:
+              bass.triggerAttackRelease('G2', '2n');
+              break;
+            case 2:
+              bass.triggerAttackRelease('A#1', '2n');
+              break;
+          }
+        }
+        if (col === 2) {
+          switch (Math.floor(Math.random() * 3)) {
+            case 0:
+              bass.triggerAttackRelease('D#2', '2n');
+              break;
+            case 1:
+              bass.triggerAttackRelease('G2', '2n');
+              break;
+            case 2:
+              bass.triggerAttackRelease('C2', '2n');
+              break;
+          }
+        }
 
+        if (col === 3) {
+          switch (Math.floor(Math.random() * 4)) {
+            case 0:
+              bass.triggerAttackRelease('G2', '2n');
+              break;
+            case 1:
+              bass.triggerAttackRelease('A#1', '2n');
+              break;
+          }
+        }
+      },
+      [0, 1, 2, 3],
+      '4m'
+    );
     this.sequence = new Tone.Sequence(
       (time, col) => {
         if (this.pattern[col]) {
-          this.pattern[col].forEach(note => {
+          this.pattern[col].forEach((note, i) => {
             if (this.userPattern[col] && this.userPattern[col].includes(note)) {
               foregroundSynth.triggerAttackRelease(
                 Tone.Frequency.mtof(60 + this.extendedScale[note]),
-                '8n'
+                '16n',
+                `+${(i * 4) / 100}`
               );
             }
             // else {
             backgroundSynth.triggerAttackRelease(
               Tone.Frequency.mtof(60 + this.extendedScale[note]),
-              '8n'
+              '16n',
+              `+${(i * 4) / 100}`
             );
             // }
           });
@@ -131,24 +233,26 @@ export class MusicEngine {
         }
         if (col === 3) {
           this.playClickSound();
-          this.playClickSound(.5,"+8n");
+          this.playClickSound(0.4, '+8n');
         }
         if (col === 4) {
           this.playKickDrum();
-          this.playClickSound(.5,"+8n");
+          this.playClickSound();
+          this.playClickSound(0.3, '+8n');
         }
         if (col === 5) {
           this.playClickSound();
-          this.playClickSound(.5,"+8n");
+          this.playClickSound(0.3, '+8n');
         }
         if (col === 6) {
           this.playClickSound();
-          this.playClickSound(.5,"+8n");
+          this.playClickSound(0.3, '+8n');
           this.playSnareDrum();
         }
         if (col === 7) {
           this.playClickSound();
           this.playKickDrum(0.6, '+8n');
+          this.playSnareDrum(0.3);
         }
       },
       [0, 1, 2, 3, 4, 5, 6, 7],
@@ -191,32 +295,78 @@ export class MusicEngine {
   togglePlay() {
     if (this.sequence.state === 'stopped') {
       this.sequence.start();
+      this.bassSequence.start();
+      this.ghostSequence.start();
     } else {
       this.sequence.stop();
+      this.bassSequence.stop();
+      this.ghostSequence.start();
     }
   }
   play() {
     this.sequence.start();
+    this.bassSequence.start();
+    this.ghostSequence.start();
   }
-  generateRandomSequence() {
+  revealGhostPattern() {
+    ghostSynth.volume.rampTo(-50, '2n');
+    sampler.volume.rampTo(-42, '2m');
+    dist2.wet.rampTo(0.05, '12m');
+    backgroundSynth.volume.rampTo(-20, '12m')
+    ghostAtmo.start();
+  }
+  silenceGhostPattern() {
+    ghostSynth.volume.rampTo(-Infinity, '2n');
+    sampler.volume.rampTo(-18, '2n');
+    dist2.wet.rampTo(0, '4n');
+    backgroundSynth.volume.rampTo(-1, '4n')
+    ghostAtmo.stop();
+  }
+  generateRandomSequence(level) {
+    if (level <= 3) {
+      for (let i = 0; i < 8; i++) {
+        if (i % 2 == 0) {
+          this.addNote(i, Math.floor(Math.random() * 4));
+        }
+        if (i == 5) {
+          if (Math.random() < 0.5) {
+            this.addNote(i, Math.floor(Math.random() * 4));
+          }
+        }
+      }
+      return;
+    }
+    if (level <= 8) {
+      for (let i = 0; i < 8; i++) {
+        if (i % 2 == 0) {
+          this.addNote(i, Math.floor(Math.random() * 4));
+        }
+        if (i % 2 == 1) {
+          if (Math.random() < 0.5) {
+            this.addNote(i, Math.floor(Math.random() * 8));
+          }
+        }
+      }
+      return;
+    }
     for (let i = 0; i < 8; i++) {
       if (i % 2 == 1) {
-        if (Math.random() > 0.4) {
+        if (Math.random() < 0.7) {
           const note = Math.floor(Math.random() * 8);
           this.addNote(i, note);
-          if (Math.random() > 0.8) {
-            const interval = Math.floor(Math.random() * 2) + 1;
+          if (Math.random() < level / 30) {
+            const interval = Math.floor(Math.random() * 2) + 2;
             if (note + interval < 8) {
               this.addNote(i, note + interval);
             }
           }
         }
       } else {
-        if (Math.random() > 0.2) {
+        if (Math.random() < 0.9) {
           const note = Math.floor(Math.random() * 5);
           this.addNote(i, note);
-          if (Math.random() > 0.8) {
-            const interval = Math.floor(Math.random() * 2) + 1;
+          if (Math.random() < level / 30) {
+            const interval = Math.floor(Math.random() * 2) + 2;
             if (note + interval < 8) {
               this.addNote(i, note + interval);
             }
@@ -224,12 +374,22 @@ export class MusicEngine {
         }
       }
     }
+    if (level > 20) {
+      for (let i = 0; i < 4; i++) {
+        this.addNote(
+          Math.floor(Math.random() * 8),
+          Math.floor(Math.random() * 8)
+        );
+      }
+    }
   }
   addNote(index, note) {
     if (!this.pattern[index]) {
       this.pattern[index] = [];
     }
-    this.pattern[index].push(note);
+    if (!this.pattern[index].includes(note)) {
+      this.pattern[index].push(note);
+    }
     this.pattern[index].sort();
   }
   addUserNote(index, note) {
