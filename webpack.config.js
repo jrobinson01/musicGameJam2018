@@ -3,7 +3,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 
 module.exports = {
-  mode: 'development',
+  mode: 'production',
   entry: {
     app: './src/index.js'
   },
@@ -51,4 +51,4 @@ module.exports = {
       chunks: 'async'
     }
   }
-}
+};

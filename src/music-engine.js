@@ -8,7 +8,7 @@ delay.set({wet: 0.2});
 var bassdelay = new Tone.PingPongDelay('4n.', 0.1).toMaster();
 bassdelay.set({wet: 0.7});
 var dist = new Tone.BitCrusher(2).toMaster();
-dist.set({wet: 1});
+dist.set({wet: .8});
 var dist2 = new Tone.BitCrusher(4).toMaster();
 dist2.set({wet: 0});
 
@@ -60,7 +60,7 @@ var errorSynth = new Tone.DuoSynth({
     envelope: {release: 0.1}
   }
 }).connect(dist);
-errorSynth.set({volume: -36});
+errorSynth.set({volume: -26});
 
 var backgroundSynth = new PolySynth({}).connect(dist2);
 backgroundSynth.set({
@@ -79,7 +79,7 @@ var foregroundSynth = new PolySynth({}).connect(delay);
 foregroundSynth.set({
   polyphony: 16,
   oscillator: {type: 'square'},
-  volume: -17,
+  volume: -28,
   envelope: {
     attack: 0.005,
     decay: 1,
@@ -108,7 +108,7 @@ export class MusicEngine {
     document.addEventListener('gameOver', () => {
       sfx.triggerAttack('c#4');
     });
-    document.addEventListener('spawnGhost', () => {
+    document.addEventListener('ghostSound', () => {
       sfx.triggerAttack('c#4');
     });
 

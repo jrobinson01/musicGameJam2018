@@ -19,11 +19,7 @@ export class GameScene extends Phaser.Scene {
       );
     });
     document.addEventListener('makeMove', e => {
-      if (e.detail && e.detail.moves) {
-        this.moves -= e.detail.moves;
-      } else {
-        this.moves -= 1;
-      }
+      this.moves = Math.max(this.moves - 1, 0);
       document.dispatchEvent(
         new CustomEvent('updateMoves', {detail: {moves: this.moves}})
       );
@@ -79,6 +75,8 @@ export class GameScene extends Phaser.Scene {
       }, 3000);
     });
     document.addEventListener('spawnGhost', () => {
+      if (this.ghost) return;
+      document.dispatchEvent(new CustomEvent('ghostSound'))
       this.musicEngine.revealGhostPattern();
       this.cameras.main.shake(300, 0.06);
       this.ghost = new Ghost({
@@ -207,7 +205,7 @@ export class GameScene extends Phaser.Scene {
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.help)) {
       // alert('I told you not to do that.');
-      this.musicEngine.revealGhostPattern();
+      // this.musicEngine.revealGhostPattern();
     }
     if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
       this.player.move({y: -1});
