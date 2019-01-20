@@ -46,21 +46,19 @@ var bass = new Tone.Synth({
   }
 }).connect(bassdelay);
 
-var errorSynth = new Tone.DuoSynth({
-  modulation: {type: 'square'},
-  modulationEnvelope: {attack: 0.001},
-  harmonicity: 2,
-  detune: 3,
-  volume: -6,
-  voice0: {
-    oscillator: {type: 'triangle'},
-    envelope: {release: 0.001}
-  },
-  voice1: {
-    envelope: {release: 0.1}
+// JR: new errorSynth, very similar to foreground synth
+var errorSynth = new PolySynth({}).connect(dist2);
+errorSynth.set({
+  polyphony: 16,
+  oscillator: {type: 'square'},
+  volume: -28,
+  envelope: {
+    attack: 0.005,
+    decay: 0.7,
+    sustain: 0.3,
+    release: 4.005
   }
-}).connect(dist);
-errorSynth.set({volume: -26});
+});
 
 var backgroundSynth = new PolySynth({}).connect(dist2);
 backgroundSynth.set({
@@ -201,17 +199,21 @@ export class MusicEngine {
             // }
           });
         }
+        // test the column we're on for a user match
         if (this.userPattern[col]) {
-          this.userPattern[col].forEach(userNote => {
+          this.userPattern[col].forEach((userNote, i) => {
             if (!this.pattern[col] || !this.pattern[col].includes(userNote)) {
+              // doesn't match
               document.dispatchEvent(
                 new CustomEvent('patternError', {
                   detail: {x: col, y: userNote}
                 })
               );
+              // play the note the user entered
               errorSynth.triggerAttackRelease(
-                Tone.Frequency.mtof(48 + this.extendedScale[userNote]),
-                '16n'
+                Tone.Frequency.mtof(60 + this.extendedScale[userNote]),
+                '16n',// a 16th note
+                `+${(i * 4) / 100}`// time?
               );
             }
           });
@@ -303,6 +305,7 @@ export class MusicEngine {
       this.ghostSequence.start();
     }
   }
+
   play() {
     this.sequence.start();
     this.bassSequence.start();

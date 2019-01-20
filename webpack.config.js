@@ -3,16 +3,10 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 
 module.exports = {
-  mode: 'production',
-  entry: {
-    app: './src/index.js'
-  },
-
   output: {
     path: path.resolve(__dirname, 'build'),
     filename: 'app.bundle.js',
   },
-
   module: {
     rules: [
       {
@@ -29,6 +23,7 @@ module.exports = {
   },
   devServer: {
     contentBase: path.resolve(__dirname, 'build'),
+    host: '0.0.0.0'
   },
   plugins: [
     new CopyWebpackPlugin([

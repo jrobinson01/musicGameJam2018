@@ -29,7 +29,9 @@ export class GameScene extends Phaser.Scene {
       this.toggleMarker({x: e.detail.x, y: Math.abs(e.detail.y - 7)});
       this.flash(e.detail.x, e.detail.y);
       this.searchForMarkers(e.detail.x, e.detail.y);
-      if (Math.random() < 0.5) {
+      // JR: spawns extra enemies when the player makes an error?
+      // JR: decreased probability, could change based on level?
+      if (Math.random() < 0.2) {
         this.enemies.push(
           new Enemy({
             x: Math.floor(Math.random() * 8),
@@ -142,6 +144,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.enemies = [];
+    // spawn initial enemies
     for (let i = 0; i < Math.min(Math.floor(this.level / 3), 10); i++) {
       this.enemies.push(
         new Enemy({
@@ -199,6 +202,13 @@ export class GameScene extends Phaser.Scene {
       })
     );
   }
+
+  movePlayerAndEnemies(playerMove) {
+    this.player.move(playerMove);
+    this.enemies.forEach(enemy => {
+      enemy.move();
+    });
+  }
   update() {
     if (this.gameOver) {
       return;
@@ -208,28 +218,17 @@ export class GameScene extends Phaser.Scene {
       // this.musicEngine.revealGhostPattern();
     }
     if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
-      this.player.move({y: -1});
-      this.enemies.forEach(enemy => {
-        enemy.move();
-      });
+      this.movePlayerAndEnemies({y: -1});
     }
     if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
-      this.player.move({y: 1});
-      this.enemies.forEach(enemy => {
-        enemy.move();
-      });
+      this.movePlayerAndEnemies({y: 1});
+
     }
     if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
-      this.player.move({x: 1});
-      this.enemies.forEach(enemy => {
-        enemy.move();
-      });
+      this.movePlayerAndEnemies({x: 1});
     }
     if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
-      this.player.move({x: -1});
-      this.enemies.forEach(enemy => {
-        enemy.move();
-      });
+      this.movePlayerAndEnemies({x: -1});
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.x)) {
       this.toggleMarker({x: this.player.x, y: this.player.y});
@@ -341,25 +340,26 @@ export class GameScene extends Phaser.Scene {
   }
 
   searchForMarkers(x, y) {
-    const pattern = this.musicEngine.getPattern();
-    const foundMarkers = [];
-    pattern.forEach((arr, i) => {
-      if (i <= x + 1 && i >= x - 1) {
-        arr.forEach(noteVal => {
-          if (noteVal <= y + 1 && noteVal >= y - 1) {
-            foundMarkers.push([i, noteVal]);
-          }
-        });
-      }
-    });
-    foundMarkers.forEach(marker => {
-      const x = marker[0];
-      const y = Math.abs(marker[1] - 7);
-      this.uncoveredMarkers[`${x},${y}`] = this.add
-        .image(x * 16 + 16, y * 16 + 16, 'uncoveredMarker')
-        .setOrigin(0, 0);
-    });
-    this.flash(x, y);
+    // JR: disable showing nearby markers
+    // const pattern = this.musicEngine.getPattern();
+    // const foundMarkers = [];
+    // pattern.forEach((arr, i) => {
+    //   if (i <= x + 1 && i >= x - 1) {
+    //     arr.forEach(noteVal => {
+    //       if (noteVal <= y + 1 && noteVal >= y - 1) {
+    //         foundMarkers.push([i, noteVal]);
+    //       }
+    //     });
+    //   }
+    // });
+    // foundMarkers.forEach(marker => {
+    //   const x = marker[0];
+    //   const y = Math.abs(marker[1] - 7);
+    //   this.uncoveredMarkers[`${x},${y}`] = this.add
+    //     .image(x * 16 + 16, y * 16 + 16, 'uncoveredMarker')
+    //     .setOrigin(0, 0);
+    // });
+    // this.flash(x, y);
   }
 
   flash(x, y, color = 0xcccccc) {
