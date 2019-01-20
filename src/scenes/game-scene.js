@@ -28,7 +28,8 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.shake(150, 0.03);
       this.toggleMarker({x: e.detail.x, y: Math.abs(e.detail.y - 7)});
       this.flash(e.detail.x, e.detail.y);
-      this.searchForMarkers(e.detail.x, e.detail.y);
+      // JR: don't search for markers on failures
+      // this.searchForMarkers(e.detail.x, e.detail.y);
       // JR: spawns extra enemies when the player makes an error?
       // JR: decreased probability, could change based on level?
       if (Math.random() < 0.2) {
@@ -340,26 +341,25 @@ export class GameScene extends Phaser.Scene {
   }
 
   searchForMarkers(x, y) {
-    // JR: disable showing nearby markers
-    // const pattern = this.musicEngine.getPattern();
-    // const foundMarkers = [];
-    // pattern.forEach((arr, i) => {
-    //   if (i <= x + 1 && i >= x - 1) {
-    //     arr.forEach(noteVal => {
-    //       if (noteVal <= y + 1 && noteVal >= y - 1) {
-    //         foundMarkers.push([i, noteVal]);
-    //       }
-    //     });
-    //   }
-    // });
-    // foundMarkers.forEach(marker => {
-    //   const x = marker[0];
-    //   const y = Math.abs(marker[1] - 7);
-    //   this.uncoveredMarkers[`${x},${y}`] = this.add
-    //     .image(x * 16 + 16, y * 16 + 16, 'uncoveredMarker')
-    //     .setOrigin(0, 0);
-    // });
-    // this.flash(x, y);
+    const pattern = this.musicEngine.getPattern();
+    const foundMarkers = [];
+    pattern.forEach((arr, i) => {
+      if (i <= x + 1 && i >= x - 1) {
+        arr.forEach(noteVal => {
+          if (noteVal <= y + 1 && noteVal >= y - 1) {
+            foundMarkers.push([i, noteVal]);
+          }
+        });
+      }
+    });
+    foundMarkers.forEach(marker => {
+      const x = marker[0];
+      const y = Math.abs(marker[1] - 7);
+      this.uncoveredMarkers[`${x},${y}`] = this.add
+        .image(x * 16 + 16, y * 16 + 16, 'uncoveredMarker')
+        .setOrigin(0, 0);
+    });
+    this.flash(x, y);
   }
 
   flash(x, y, color = 0xcccccc) {
